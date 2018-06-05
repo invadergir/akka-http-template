@@ -136,12 +136,16 @@ if [ "$NEW_PACKAGE_PREFIX" != "$PKGPREFIX" ]; then
     TESTDIR="$(readlink -f ./src/test/scala)"
 
     # Rename LAST dirs
-    mv -fv $MAINDIR/$PPDIRS $MAINDIR/$PPFIRST/$NEWPPLAST
-    mv -fv $TESTDIR/$PPDIRS $TESTDIR/$PPFIRST/$NEWPPLAST
+    if [[ $PPLAST != $NEWPPLAST ]]; then
+        mv -fv $MAINDIR/$PPDIRS $MAINDIR/$PPFIRST/$NEWPPLAST
+        mv -fv $TESTDIR/$PPDIRS $TESTDIR/$PPFIRST/$NEWPPLAST
+    fi
 
     # Rename FIRST dirs
-    mv -fv $MAINDIR/$PPFIRST $MAINDIR/$NEWPPFIRST
-    mv -fv $TESTDIR/$PPFIRST $TESTDIR/$NEWPPFIRST
+    if [[ $PPFIRST != $NEWPPFIRST ]]; then
+        mv -fv $MAINDIR/$PPFIRST $MAINDIR/$NEWPPFIRST
+        mv -fv $TESTDIR/$PPFIRST $TESTDIR/$NEWPPFIRST
+    fi
 
     # com/example is now new1/newX
 
