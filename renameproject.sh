@@ -111,29 +111,33 @@ cd $THISDIR || err "Couldn't cd to this dir:  $THISDIR"
 
 function joinBy { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
 
+# Parse the words in the PKGPREFIX and NEW_PACKAGE_PREFIX strings:
+set -e
+IFS='.' read -ra PPWORDS <<< "$PKGPREFIX"
+IFS='.' read -ra NEWPPWORDS <<< "$NEW_PACKAGE_PREFIX"
+set -x
+PPSIZE=${#PPWORDS[*]}
+NEWPPSIZE=${#NEWPPWORDS[*]}
+[ $PPSIZE -eq 2 ] || err "The default PKGPREFIX must have only 2 elements; this algorithm depends on it: $PKGPREFIX."
+[ $NEWPPSIZE -ge $PPSIZE ] || err "The NEW_PACKAGE_PREFIX cannot have fewer elements in it than the original '$PKGPREFIX':  '$NEW_PACKAGE_PREFIX'"
+
+PPFIRST="${PPWORDS[0]}"
+NEWPPFIRST="${NEWPPWORDS[0]}"
+
+PPLAST="${PPWORDS[${PPSIZE}-1]}"
+NEWPPLAST="${NEWPPWORDS[${NEWPPSIZE}-1]}"
+
+PPDIRS=$(joinBy "/" ${PPWORDS[*]})
+NEWPPDIRS=$(joinBy "/" ${NEWPPWORDS[*]})
+
+MAINDIR="$(readlink -f ./src/main/scala)"
+TESTDIR="$(readlink -f ./src/test/scala)"
+set +e
+
 # If the package prefix is changing:
 if [ "$NEW_PACKAGE_PREFIX" != "$PKGPREFIX" ]; then
+
     set -e
-    # Parse the words in the PKGPREFIX and NEW_PACKAGE_PREFIX strings:
-    IFS='.' read -ra PPWORDS <<< "$PKGPREFIX"
-    IFS='.' read -ra NEWPPWORDS <<< "$NEW_PACKAGE_PREFIX"
-    set -x
-    PPSIZE=${#PPWORDS[*]}
-    NEWPPSIZE=${#NEWPPWORDS[*]}
-    [ $PPSIZE -eq 2 ] || err "The default PKGPREFIX must have only 2 elements; this algorithm depends on it: $PKGPREFIX."
-    [ $NEWPPSIZE -ge $PPSIZE ] || err "The NEW_PACKAGE_PREFIX cannot have fewer elements in it than the original '$PKGPREFIX':  '$NEW_PACKAGE_PREFIX'"
-
-    PPFIRST="${PPWORDS[0]}"
-    NEWPPFIRST="${NEWPPWORDS[0]}"
-
-    PPLAST="${PPWORDS[${PPSIZE}-1]}"
-    NEWPPLAST="${NEWPPWORDS[${NEWPPSIZE}-1]}"
-
-    PPDIRS=$(joinBy "/" ${PPWORDS[*]})
-    NEWPPDIRS=$(joinBy "/" ${NEWPPWORDS[*]})
-
-    MAINDIR="$(readlink -f ./src/main/scala)"
-    TESTDIR="$(readlink -f ./src/test/scala)"
 
     # Rename LAST dirs
     if [[ $PPLAST != $NEWPPLAST ]]; then
@@ -195,6 +199,12 @@ for FILE in "${fileList[@]}"; do
     echo "Modifying package names in $FILE..."
     perl -pi -e 's/'$ORIGPKG'/'$NEWPKG'/g' $FILE
 done
+
+# Replace the organization in build.sbt.
+# We consider the organization os the first two segments in 
+# the new package name.
+NEWORG="${NEWPPWORDS[0]}.${NEWPPWORDS[1]}"
+perl -pi -e 's/organization := "com.example"/organization := "'$NEWORG'"/g' build.sbt
 
 # Change the project name in build.sbt:
 echo "Modifying project & jar names in build.sbt..."
