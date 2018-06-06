@@ -217,7 +217,7 @@ echo "Blowing away the .git dir..."
 rm -rf .git
 
 echo "Clearing out the LICENSE file.  You will have to make that decision on your own."
-echo "" > LICENSE
+echo "TODO" > LICENSE
 
 echo 
 echo "The files & dirs have been modified.  Please note, you may still want to:"
