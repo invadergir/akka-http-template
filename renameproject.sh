@@ -153,16 +153,20 @@ if [ "$NEW_PACKAGE_PREFIX" != "$PKGPREFIX" ]; then
     BASEDIRS=($MAINDIR $TESTDIR)
     for DIR in "${BASEDIRS[@]}"; do
         pushd .
+        # Rename last dir to temp dir.
         cd $DIR/$NEWPPFIRST
         TEMPLAST=$(mktemp -d -p .)
         rmdir $TEMPLAST
         mv $NEWPPLAST $TEMPLAST
+        # create middle dirs
         cd ..
         mkdir -p $NEWPPDIRS
+        # move last dir to correct spot
         mv $DIR/$NEWPPFIRST/$TEMPLAST/* $NEWPPDIRS/
         rmdir $DIR/$NEWPPFIRST/$TEMPLAST
         popd
     done
+
     set +e
 fi
 
@@ -170,13 +174,13 @@ cd $THISDIR
 
 # Move all dirs named ORIGNAME to NEWNAME
 # Only set this true when testing.
-#DISABLE_DIR_RENAME=false
-#if ! $DISABLE_DIR_RENAME; then
-#    mapfile -t fileList < <(find . -name "$ORIGNAMELEAN" -type d)
-#    for FILE in "${fileList[@]}"; do 
-#        mv -vf "$FILE" "$(dirname $FILE)/$NEWNAMELEAN"
-#    done
-#fi
+DISABLE_DIR_RENAME=false
+if ! $DISABLE_DIR_RENAME; then
+    mapfile -t fileList < <(find . -name "$ORIGNAMELEAN" -type d)
+    for FILE in "${fileList[@]}"; do 
+        mv -vf "$FILE" "$(dirname $FILE)/$NEWNAMELEAN"
+    done
+fi
 
 # In all scala files, replace the package names:
 mapfile -t fileList < <(find . -name "*.scala" -type f)
