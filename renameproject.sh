@@ -186,11 +186,22 @@ if ! $DISABLE_DIR_RENAME; then
     done
 fi
 
-# In all scala files, replace the package names:
+# In all scala files:
 mapfile -t fileList < <(find . -name "*.scala" -type f)
 for FILE in "${fileList[@]}"; do 
+    # replace the package names:
     echo "Modifying package names in $FILE..."
     perl -pi -e 's/'$ORIGPKG'/'$NEWPKG'/g' $FILE
+
+    # Also replace the project name
+    perl -pi -e 's/'$ORIGNAMELEAN'/'$NEWNAMELEAN'/g' $FILE
+done
+
+# fix the conf file
+mapfile -t fileList < <(find . -name "*.conf" -type f)
+for FILE in "${fileList[@]}"; do 
+    # replace the project name
+    perl -pi -e 's/'$ORIGNAMELEAN'/'$NEWNAMELEAN'/g' $FILE
 done
 
 # In all SBT files, replace the package names:
