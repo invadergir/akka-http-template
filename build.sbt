@@ -17,6 +17,9 @@ fork := true
 // Allow CTRL-C to cancel running tasks without exiting SBT CLI.
 cancelable in Global := true
 
+// Needed for akka-http-json4s:
+resolvers += Resolver.bintrayRepo("hseeberger", "maven")
+
 libraryDependencies ++= Seq(
   
   // akka
@@ -28,6 +31,9 @@ libraryDependencies ++= Seq(
   // For JSON parsing (see https://github.com/json4s/json4s)
   "org.json4s" %%  "json4s-jackson" % json4SVer,
   "org.json4s" %%  "json4s-ext" % json4SVer,  
+
+  // This integrates json4s into akka-http:
+  "de.heikoseeberger" %% "akka-http-json4s" % "1.21.0",
 
   // test akka
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVer % Test,
@@ -59,3 +65,4 @@ initialCommands in console := """
   // project stuff
   import com.example.akkahttptemplate._
 """
+
