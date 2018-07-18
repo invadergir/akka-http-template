@@ -21,7 +21,6 @@ trait ThingRoutes extends Json4sSupport with StrictLogging {
   implicit def system: ActorSystem
 
   import Json4sProtocol.formats
-  import Json4sSupport._
   implicit val serialization = jackson.Serialization
 
   // Exception handling - if the service throws a special exception we can 
