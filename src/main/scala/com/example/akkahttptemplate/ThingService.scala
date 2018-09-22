@@ -13,7 +13,13 @@ object ThingService {
   // Shared mutable storage.
   // If it's small amounts of data, you can also just use actors instead but
   // this is a demo of "actor-less" usage.
-  private val thingStorage: Map[String, Thing] = TrieMap.empty 
+  private val thingStorage: Map[String, Thing] = TrieMap.empty
+
+  // We insert a test thing right at the beginning: 
+  {
+    val helloWorld = Thing("hello", "world!")
+    thingStorage += helloWorld.id -> helloWorld
+  }
 
   // Execution context.  TODO customize this.
   import scala.concurrent.ExecutionContext.Implicits.global

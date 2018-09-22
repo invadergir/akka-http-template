@@ -18,6 +18,12 @@ sbt test run
 
 The server runs on localhost:8080.
 
+To test it, you can query for the default Thing which is available at startup:
+
+```
+curl -vX GET http://localhost:8080/things/hello
+```
+
 ### Build Jar
 
 ```
