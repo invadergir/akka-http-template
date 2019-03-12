@@ -14,7 +14,6 @@ object Config {
 
   // global app configuration
   val app: AppConfig = pureconfig.loadConfigOrThrow[AppConfig]("akkahttptemplate")
-  app.validate()
   println(s"App Configuration is $app")
   
   /** Helper method to check a boolean and throw if not true.
@@ -32,11 +31,7 @@ import Config.check
 // top-level config object
 case class AppConfig(thisServer: ServerConnection) {
 
-  /** validate
-    */
-  def validate() = {
-    thisServer.validate()
-  }
+  // TODO add custom configs here.  Put validation code in case class constructors.
 }
 
 case class ServerConnection(
@@ -45,13 +40,9 @@ case class ServerConnection(
   port: Int,
 ) {
 
-  /**
-   * Simple check on the connection parameters. 
-   */
-  def validate(): Unit = { 
-    check(host.nonEmpty && port > 0 && protocol.nonEmpty, 
-      "ServerConnection instance is invalid: "+this.toString)
-  }
+  // Simple check on the connection parameters. 
+  check(host.nonEmpty && port > 0 && protocol.nonEmpty, 
+    "ServerConnection instance is invalid: "+this.toString)
 
   /** Get the host and port for use in connection strings.
     * 
