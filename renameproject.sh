@@ -3,6 +3,7 @@
 ARGS_ARRAY=("${@}")
 NUM_ARGS=${#ARGS_ARRAY[@]}
 THISDIR=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
+THISPROG=$(basename $(readlink -e ${BASH_SOURCE[0]}))
 
 PKGPREFIX="com.example"
 ORIGNAME="akka-http-template"
@@ -41,7 +42,7 @@ Syntax()
     echo ""
     echo "*** NOTE that this script requires perl to be installed.  ***"
     echo ""
-    echo "EXAMPLE:  $THISPROG my-super-fun-app"
+    echo "EXAMPLE:  $THISPROG my-super-fun-app -p com.acme.mysuperfunapp"
     echo ""
     exit 101
 }
