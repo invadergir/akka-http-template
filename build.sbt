@@ -9,13 +9,13 @@ scalaVersion := "2.12.6"
 lazy val akkaVer = "2.5.12"
 lazy val akkaHttpVer = "10.1.1"
 lazy val scalaTestVer = "3.0.4"
-lazy val json4SVer = "3.6.0-M4"  // todo update to latest when next ver comes out (need at least this for JavaTimeSerializers)
+lazy val json4SVer = "3.6.11"
 
 // Always fork the jvm (test and run)
 fork := true
 
 // Allow CTRL-C to cancel running tasks without exiting SBT CLI.
-cancelable in Global := true
+Global / cancelable := true
 
 // Needed for akka-http-json4s:
 resolvers += Resolver.bintrayRepo("hseeberger", "maven")
@@ -53,14 +53,14 @@ libraryDependencies ++= Seq(
 )
 
 // Print full stack traces in tests:
-testOptions in Test += Tests.Argument("-oF")
+Test / testOptions += Tests.Argument("-oF")
 
 // Assembly stuff (for fat jar)
-mainClass in assembly := Some("com.example.akkahttptemplate.Main")
-assemblyJarName in assembly := "akka-http-template.jar"
+assembly / mainClass := Some("com.example.akkahttptemplate.Main")
+assembly / assemblyJarName := "akka-http-template.jar"
 
 // Some stuff to import in tho console
-initialCommands in console := """
+console / initialCommands := """
 
   // project stuff
   import com.example.akkahttptemplate._
