@@ -24,6 +24,30 @@ To test it, you can query for the default Thing which is available at startup:
 curl -vX GET http://localhost:8080/things/hello
 ```
 
+Which gives:
+```
+{"id":"hello","description":"world!"}
+```
+
+Other example usages:
+
+```
+# Create 'a' thing.
+curl -X POST -H "Content-Type: application/json" -d '{"id": "a", "description":"aaa"}' http://localhost:8080/things
+
+# Update 'a' thing:
+curl -vX PUT -H "Content-Type: application/json" -d '{"id": "a", "description":"AAAAA"}' http://localhost:8080/things/a
+
+# Get that thing:
+curl -vX GET http://localhost:8080/things/a
+
+# Get all the things:
+curl -vX GET http://localhost:8080/things
+
+# Delete 'a' thing:
+curl -vX DELETE http://localhost:8080/things/a
+```
+
 ### Build Jar
 
 ```
