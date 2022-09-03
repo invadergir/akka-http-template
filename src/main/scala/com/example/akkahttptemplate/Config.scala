@@ -1,7 +1,8 @@
 package com.example.akkahttptemplate
 
 import pureconfig._
-import pureconfig.configurable._
+import pureconfig.generic.auto._
+import pureconfig.generic.ProductHint
 
 // app-wide settings / configuration object
 object Config {
@@ -13,7 +14,8 @@ object Config {
   //implicit val converterlocalDateTime = localDateTimeConfigConvert(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
   // global app configuration
-  val app: AppConfig = pureconfig.loadConfigOrThrow[AppConfig]("akkahttptemplate")
+  val app: AppConfig = ConfigSource.default.loadOrThrow[AppConfigWrapper].app
+
   println(s"App Configuration is $app")
   
   /** Helper method to check a boolean and throw if not true.
@@ -28,16 +30,20 @@ object Config {
 
 import Config.check
 
-// top-level config object
+// "AppConfigWrapper" is the top-level config object, and it's only necessary in
+// order to provide an enclosing object.  Previous pureconfig APIs allowed you
+// to do that without an extra wrapping case class.
+case class AppConfigWrapper(app: AppConfig)
 case class AppConfig(thisServer: ServerConnection) {
 
-  // TODO add custom configs here.  Put validation code in case class constructors.
+  // TODO add custom configs here.  Put validation code in case class constructors
+  // (OR add cats validation)
 }
 
 case class ServerConnection(
-  protocol: String = "http",
   host: String,
   port: Int,
+  protocol: String = "http",
 ) {
 
   // Simple check on the connection parameters. 

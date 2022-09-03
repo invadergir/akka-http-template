@@ -1,21 +1,26 @@
 package com.example.akkahttptemplate.specs
 
 import akka.http.scaladsl.model.MediaTypes.`application/json`
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.util.FastFuture.EnhancedFuture
 import com.example.akkahttptemplate._
-import de.heikoseeberger.akkahttpjson4s.Json4sSupport
-import org.json4s.jackson.Serialization._
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe._
+import io.circe.parser._
+import io.circe.syntax._
 
 class ThingRoutesSpec
   extends UnitSpec
   with ScalatestRouteTest
-  with Json4sSupport
 {
+  import FailFastCirceSupport._
+  import io.circe.generic.auto._
 
   var route = Server.thingRoutes
-  implicit val jsonFormats = org.json4s.DefaultFormats
 
   val initialThings = Seq(
     Thing("A", "AAA"),
@@ -48,11 +53,18 @@ class ThingRoutesSpec
   // Helper method to post initialThings before tests that get them.
   def postInitialThings(): Unit = {
     initialThings.foreach{ thing =>
+      val entityString = thing.asJson.noSpaces
       Post(
         "/things",
-        HttpEntity(`application/json`, write(thing))
+        HttpEntity(`application/json`, entityString)
       ) ~> route
     }
+  }
+
+  // Hack to help get the string out of the response.
+  // There is an issue related to this test kit and circe; responseAs[String] doesn't work properly.  (TODO)
+  def getResponseString(response: HttpResponse): String = {
+    response.entity.asInstanceOf[HttpEntity.Strict].data.decodeString("UTF-8")
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -71,17 +83,18 @@ class ThingRoutesSpec
   describe("GET /things") {
     it("should respond with an array of things, OK, json content-type") {
       postInitialThings()
-      Get("/things") ~> Route.seal(route) ~> check {
+      Get("/things") ~> route ~> check {
         handled shouldBe true
         status shouldEqual StatusCodes.OK
         contentType shouldBe ContentTypes.`application/json`
 
-        val strResponse = responseAs[String]
+        // val strResponse = responseAs[String] // this doesn't work (TODO???)
+        val strResponse = getResponseString(response)
         Option(strResponse) shouldNot be (None)
         strResponse.nonEmpty shouldBe true
 
-        val response = read[Seq[Thing]](strResponse)
-        response.toSet shouldBe initialThings.toSet
+        val things = decode[Seq[Thing]](strResponse).toOption.get
+        things.toSet shouldBe initialThings.toSet
       }
     }
   }
@@ -94,12 +107,12 @@ class ThingRoutesSpec
         status shouldEqual StatusCodes.OK
         contentType shouldBe ContentTypes.`application/json`
 
-        val strResponse = responseAs[String]
+        val strResponse = getResponseString(response)
         Option(strResponse) shouldNot be (None)
         strResponse.nonEmpty shouldBe true
 
-        val response = read[Thing](strResponse)
-        response shouldBe initialThings.find( _.id == "B" ).get
+        val thing = decode[Thing](strResponse).toOption.get
+        thing shouldBe initialThings.find( _.id == "B" ).get
       }
     }
   }
@@ -110,17 +123,17 @@ class ThingRoutesSpec
       val entity = Thing("A", "AAA")
       Post(
         "/things",
-        HttpEntity(`application/json`, write(entity))
+        HttpEntity(`application/json`, entity.asJson.noSpaces)
       ) ~> route ~> check {
         handled shouldBe true
         status shouldEqual StatusCodes.Created
         contentType shouldBe ContentTypes.`application/json`
 
-        val strResponse = responseAs[String]
+        val strResponse = getResponseString(response)
         Option(strResponse) shouldNot be (None)
         strResponse.nonEmpty shouldBe true
-        val response = read[RestPostResult](strResponse)
-        response.link shouldBe "/things/A"
+        val result = decode[RestPostResult](strResponse).toOption.get
+        result.link shouldBe "/things/A"
       }
     }
 
@@ -128,7 +141,7 @@ class ThingRoutesSpec
       // 1st time, created
       Post(
         "/things", 
-        HttpEntity(`application/json`, write(Thing("A", "AAA")))
+        HttpEntity(`application/json`, Thing("A", "AAA").asJson.noSpaces)
       ) ~> route ~> check {
         // first time, created
         status shouldEqual StatusCodes.Created
@@ -137,7 +150,7 @@ class ThingRoutesSpec
       // 2nd time, ok
       Post(
         "/things",
-        HttpEntity(`application/json`, write(Thing("A", "AAA2")))
+        HttpEntity(`application/json`, Thing("A", "AAA2").asJson.noSpaces)
       ) ~> route ~> check {
         status shouldEqual StatusCodes.OK
       }
@@ -151,17 +164,17 @@ class ThingRoutesSpec
       val entity = Thing("A", "AAA")
       Put(
         "/things/A",
-        HttpEntity(`application/json`, write(entity))
+        HttpEntity(`application/json`, entity.asJson.noSpaces)
       ) ~> route ~> check {
         handled shouldBe true
         status shouldEqual StatusCodes.Created
         contentType shouldBe ContentTypes.`application/json`
 
-        val strResponse = responseAs[String]
+        val strResponse = getResponseString(response)
         Option(strResponse) shouldNot be(None)
         strResponse.nonEmpty shouldBe true
-        val response = read[RestPostResult](strResponse)
-        response.link shouldBe "/things/A"
+        val result = decode[RestPostResult](strResponse).toOption.get
+        result.link shouldBe "/things/A"
       }
     }
 
@@ -169,7 +182,7 @@ class ThingRoutesSpec
       // 1st time, created
       Put(
         "/things/A",
-        HttpEntity(`application/json`, write(Thing("A", "AAA")))
+        HttpEntity(`application/json`, Thing("A", "AAA").asJson.noSpaces)
       ) ~> route ~> check {
         // first time, created
         status shouldEqual StatusCodes.Created
@@ -178,7 +191,7 @@ class ThingRoutesSpec
       // 2nd time, ok
       Put(
         "/things/A",
-        HttpEntity(`application/json`, write(Thing("A", "AAA2")))
+        HttpEntity(`application/json`, Thing("A", "AAA2").asJson.noSpaces)
       ) ~> route ~> check {
         status shouldEqual StatusCodes.OK
       }
@@ -192,7 +205,7 @@ class ThingRoutesSpec
       Delete("/things/B") ~> route ~> check {
         handled shouldBe true
         status shouldEqual StatusCodes.NoContent
-        responseAs[String].isEmpty shouldBe true
+        getResponseString(response).isEmpty shouldBe true
       }
     }
   }

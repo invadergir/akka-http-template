@@ -9,19 +9,16 @@ import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import com.example.akkahttptemplate.exceptions.HttpException
 import com.typesafe.scalalogging.StrictLogging
-import de.heikoseeberger.akkahttpjson4s.Json4sSupport
-import org.json4s.jackson
-import org.json4s.jackson.Serialization.write
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
 import scala.concurrent.{Future, blocking}
 
-trait ThingRoutes extends Json4sSupport with StrictLogging {
+trait ThingRoutes extends FailFastCirceSupport with StrictLogging {
 
   // we leave these abstract, since they will be provided by the App
   implicit def system: ActorSystem
 
-  import Json4sProtocol.formats
-  implicit val serialization = jackson.Serialization
+  import io.circe.generic.auto._
 
   // Exception handling - if the service throws a special exception we can 
   // easily map it to HTTP.  Otherwise it gets treated as 500 server error.
@@ -49,11 +46,6 @@ trait ThingRoutes extends Json4sSupport with StrictLogging {
             concat(
 
               // Get all the Things!
-              // Note to simply return the array json, we have to return a
-              // serialized string manually, hence the json4s write().
-              // Otherwise you could create a case class with a sequence inside it,
-              // which would be marshalled like normal, but then you have an extra
-              // potentially unneeded member inside the json.
               get {
                 val listF: Future[Seq[Thing]] = ThingService.getAll
                 onSuccess(listF) { list =>
@@ -68,7 +60,7 @@ trait ThingRoutes extends Json4sSupport with StrictLogging {
                   onSuccess(thingCreated) { pr =>
                     logger.info(pr.message)
                     // How to force a content-type and manually serialize to JSON, not needed
-                    // if using Json4sSupport or similar:
+                    // if using FailFastCirceSupport or similar:
 //                    complete(HttpResponse(
 //                      pr.statusCode,
 //                      entity = HttpEntity(
