@@ -10,10 +10,14 @@ object Server extends ThingRoutes {
 
   // set up ActorSystem and other dependencies here
   implicit val system: ActorSystem = ActorSystem("akkahttptemplate-actorsystem")
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
+//  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   // needed for the future flatMap/onComplete in the end
   implicit val executionContext = system.dispatcher
+
+  // Create the thing service.
+  // We insert a test Thing right at the beginning for ease of demonstration: 
+  val thingService: ThingService = new ThingServiceImpl(Thing("hello", "world!"))
 
   // Runs the server and safely shuts down.
   // Helps when running in sbt.

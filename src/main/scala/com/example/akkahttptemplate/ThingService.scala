@@ -6,40 +6,76 @@ import scala.collection.concurrent.{Map, TrieMap}
 import scala.concurrent.{Future, blocking}
 import scala.util.Try
 
-// Service class.  Separates the service logic from the HTTP wrapper to ease
-// unit testing.
-object ThingService {
+// Things Service trait.  
+// Separates the service logic from the HTTP wrapper to ease unit testing.
 
-  // Shared mutable storage.
-  // If it's small amounts of data, you can also just use actors instead but
-  // this is a demo of "actor-less" usage.
-  private val thingStorage: Map[String, Thing] = TrieMap.empty
-
-  // We insert a test thing right at the beginning: 
-  {
-    val helloWorld = Thing("hello", "world!")
-    thingStorage += helloWorld.id -> helloWorld
-  }
-
-  // Execution context.  TODO customize this.
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  // Testing
-  def workV(millis: Long): Long = { println(s"$millis: Sleeping for $millis..."); Thread.sleep(millis); if (millis==666) throw new RuntimeException("Some error happened!"); println(s"$millis: Done sleeping for $millis."); millis }
-  // With blocking:
-  def workVB(millis: Long): Long = { blocking{ workV(millis) } }
+trait ThingService {
 
   /**
    * Get a thing by id.
    */
-  def get(id: String): Future[Option[Thing]] = Future {
+  def get(id: String): Future[Option[Thing]]
+
+  /**
+   * Get all the things!
+   */
+  def getAll(): Future[Seq[Thing]]
+
+  /**
+    * Post a new (or updated) thing
+    */
+  def post(thing: Thing): Future[WriteResult[Thing]]
+
+  /**
+    * Put a new (or updated) thing. In this app, there is no 
+    * difference between PUT and POST. The ids must match though.
+    */
+  def put(id: String, thing: Thing): Future[WriteResult[Thing]] 
+
+  /**
+    * Delete a thing. 
+    */
+  def delete(id: String): Future[WriteResult[Thing]]
+
+  // temp testing
+  //def transform(i: Int): Int = i + 2
+}
+
+// Real implementation.
+// If you want to initialize it with a set of things (for example, for testing),
+// you can do it here.
+class ThingServiceImpl(
+  initialDataSet: Thing*, 
+//  initialDataSet: Seq[Thing] = Nil, 
+) extends ThingService {
+
+  // Shared mutable storage (thread safe).
+  // A real app will use actors or a database.
+  private val thingStorage = TrieMap.empty[String, Thing]
+
+  // Insert all the initial data, if any.
+  initialDataSet.foreach{ thing =>
+    thingStorage += thing.id->thing
+  }
+
+  // Execution context.  TODO: customize this.
+  import scala.concurrent.ExecutionContext.Implicits.global
+
+  // Testing
+  def work(millis: Long): Long = { println(s"$millis: Sleeping for $millis..."); Thread.sleep(millis); if (millis==666) throw new RuntimeException("Some error happened!"); println(s"$millis: Done sleeping for $millis."); millis }
+  // With blocking:
+  def workB(millis: Long): Long = { blocking{ work(millis) } }
+
+  /**
+   * Get a thing by id.
+   */
+  override def get(id: String): Future[Option[Thing]] = Future {
 
     // For any storage (typically database access, you will need to add this
     // blocking flag to tell the executor that this may block and it's ok.
-    // A TrieMap is supposed to be lock free, so this is just for demonstration.
     blocking {
       // Uncomment the below to test how blocking the endpoint works.
-      //workV(Try{id.toLong}.getOrElse(2000))
+      //work(Try{id.toLong}.getOrElse(2000))
       thingStorage.get(id)
     }
   }
@@ -47,7 +83,7 @@ object ThingService {
   /**
    * Get all the things!
    */
-  def getAll: Future[Seq[Thing]] = Future {
+  override def getAll(): Future[Seq[Thing]] = Future {
 
     // Add blocking flag to all code that may block (even though this doesn't).
     blocking {
@@ -58,7 +94,7 @@ object ThingService {
   /**
     * Post a new (or updated) thing
     */
-  def post(thing: Thing): Future[WriteResult[Thing]] = Future {
+  override def post(thing: Thing): Future[WriteResult[Thing]] = Future {
     blocking {
       def save() = thingStorage += thing.id->thing
 
@@ -77,13 +113,13 @@ object ThingService {
     * Put a new (or updated) thing. In this app, there is no 
     * difference between PUT and POST. The ids must match though.
     */
-  def put(id: String, thing: Thing): Future[WriteResult[Thing]] = { 
+  override def put(id: String, thing: Thing): Future[WriteResult[Thing]] = { 
     val check = Future {
       if (id != thing.id) throw new HttpException(StatusCodes.BadRequest, "Bad request!  Must PUT to the same path as the 'id' field.")
     }
 
     for {
-      c <- check
+      _ <- check
       p <- post(thing)
     } yield p
   }
@@ -91,17 +127,15 @@ object ThingService {
   /**
     * Delete a thing. 
     */
-  def delete(id: String): Future[WriteResult[Thing]] = Future {
+  override def delete(id: String): Future[WriteResult[Thing]] = Future {
     blocking {
       thingStorage -= id
       WriteResult[Thing](StatusCodes.NoContent, "", None)
     }
   }
 
-  // Helper methods for testing
-  // TODO this needs to be a class not object; these aren't properly protected.
+  // Helper method for testing.  This copies the data to an immutable map to return.
   def getStorage: scala.collection.immutable.Map[String, Thing] = thingStorage.toMap
-  protected[akkahttptemplate] def clearStorage = thingStorage.clear
 }
 
 // Returned from most write methods:

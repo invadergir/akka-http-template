@@ -13,12 +13,16 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
 import scala.concurrent.{Future, blocking}
 
-trait ThingRoutes extends FailFastCirceSupport with StrictLogging {
-
-  // we leave these abstract, since they will be provided by the App
-  implicit def system: ActorSystem
+trait ThingRoutes 
+  extends FailFastCirceSupport 
+  with StrictLogging 
+{
+  // This may be needed if you use actors to handle routes.
+  //implicit def system: ActorSystem
 
   import io.circe.generic.auto._
+
+  implicit val thingService: ThingService
 
   // Exception handling - if the service throws a special exception we can 
   // easily map it to HTTP.  Otherwise it gets treated as 500 server error.
@@ -47,7 +51,7 @@ trait ThingRoutes extends FailFastCirceSupport with StrictLogging {
 
               // Get all the Things!
               get {
-                val listF: Future[Seq[Thing]] = ThingService.getAll
+                val listF: Future[Seq[Thing]] = thingService.getAll
                 onSuccess(listF) { list =>
                   complete(list)
                 }
@@ -56,7 +60,7 @@ trait ThingRoutes extends FailFastCirceSupport with StrictLogging {
               // Post a new Thing
               post {
                 entity(as[Thing]) { thing =>
-                  val thingCreated: Future[WriteResult[Thing]] = ThingService.post(thing)
+                  val thingCreated: Future[WriteResult[Thing]] = thingService.post(thing)
                   onSuccess(thingCreated) { pr =>
                     logger.info(pr.message)
                     // How to force a content-type and manually serialize to JSON, not needed
@@ -80,7 +84,7 @@ trait ThingRoutes extends FailFastCirceSupport with StrictLogging {
 
               // Get one thing.
               get {
-                val maybeThing: Future[Option[Thing]] = ThingService.get(id)
+                val maybeThing: Future[Option[Thing]] = thingService.get(id)
                 rejectEmptyResponse {
                   complete(maybeThing)
                 }
@@ -89,7 +93,7 @@ trait ThingRoutes extends FailFastCirceSupport with StrictLogging {
               // Put one thing.
               put {
                 entity(as[Thing]) { thing =>
-                  val thingCreated: Future[WriteResult[Thing]] = ThingService.put(id, thing)
+                  val thingCreated: Future[WriteResult[Thing]] = thingService.put(id, thing)
                   onSuccess(thingCreated) { pr =>
                     logger.info(pr.message)
                     complete((pr.statusCode, RestPutResult(pr.message, s"/things/${pr.thing.get.id}")))
@@ -99,7 +103,7 @@ trait ThingRoutes extends FailFastCirceSupport with StrictLogging {
 
               // Delete one thing.
               delete {
-                val thingDeleted: Future[WriteResult[Thing]] = ThingService.delete(id)
+                val thingDeleted: Future[WriteResult[Thing]] = thingService.delete(id)
                 onSuccess(thingDeleted) { pr =>
                   logger.info(pr.message)
                   complete((pr.statusCode, ""))

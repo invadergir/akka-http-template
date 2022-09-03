@@ -8,8 +8,9 @@ scalaVersion := "2.13.8"
 
 lazy val akkaVer = "2.6.19"
 lazy val akkaHttpVer = "10.2.9"
-lazy val scalaTestVer = "3.2.12"
 lazy val circeVer = "0.14.1"
+lazy val scalaTestVer = "3.2.13"
+lazy val scalaMockVer = "5.2.0"
 
 // Always fork the jvm (test and run)
 fork := true
@@ -48,8 +49,10 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4",
 
   // testing
-  "org.scalactic" %% "scalactic" % scalaTestVer % Test,
+  "org.scalactic" %% "scalactic" % scalaTestVer,
   "org.scalatest" %% "scalatest" % scalaTestVer % Test,
+  "org.scalamock" %% "scalamock" % scalaMockVer % Test,
+
 )
 
 // Print full stack traces in tests:
