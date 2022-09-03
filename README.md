@@ -33,7 +33,7 @@ Other example usages:
 
 ```
 # Create 'a' thing.
-curl -X POST -H "Content-Type: application/json" -d '{"id": "a", "description":"aaa"}' http://localhost:8080/things
+curl -vX POST -H "Content-Type: application/json" -d '{"id": "a", "description":"aaa"}' http://localhost:8080/things
 
 # Update 'a' thing:
 curl -vX PUT -H "Content-Type: application/json" -d '{"id": "a", "description":"AAAAA"}' http://localhost:8080/things/a
