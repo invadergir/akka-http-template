@@ -62,7 +62,7 @@ Test / testOptions += Tests.Argument("-oF")
 assembly / mainClass := Some("com.example.akkahttptemplate.Main")
 assembly / assemblyJarName := "akka-http-template.jar"
 
-// Some stuff to import in tho console
+// Some stuff to import in the console
 console / initialCommands := """
 
   // project stuff
