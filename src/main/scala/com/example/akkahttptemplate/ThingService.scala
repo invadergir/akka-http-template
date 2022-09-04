@@ -46,7 +46,6 @@ trait ThingService {
 // you can do it here.
 class ThingServiceImpl(
   initialDataSet: Thing*, 
-//  initialDataSet: Seq[Thing] = Nil, 
 ) extends ThingService {
 
   // Shared mutable storage (thread safe).
